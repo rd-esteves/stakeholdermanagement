@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Course Plan: Stakeholder Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Slate, Blue, Green, Amber) -->
+    <!-- Application Structure Plan: A single-page application with a fixed left sidebar for module navigation and a dynamic main content area. The sidebar provides a constant overview and quick access, while the main area displays detailed information for the selected module. This structure was chosen for its high usability, allowing users (instructional designers, managers) to non- linearly explore the course plan, compare modules, and grasp the overall structure without extensive scrolling. The home page provides a comprehensive course overview before diving into individual modules. A "References" page has been added at the end for source attribution. -->
+    <!-- Visualization & Content Choices: 
+        - Course Structure -> Goal: Organize/Navigate -> Presentation: Interactive Sidebar Nav -> Interaction: Click to display module details -> Justification: Provides rapid, non-linear access to all course components.
+        - Power/Interest Grid (from Module 4) -> Goal: Inform/Organize -> Viz: HTML/CSS Grid Diagram -> Interaction: None (Static Display) -> Justification: Translates a key theoretical concept from text into a clear visual diagram, improving comprehension of the analysis tool. Method: Tailwind CSS Grid.
+        - Module Content (Topics, Descriptions) -> Goal: Inform -> Presentation: Styled Text Cards with Icons -> Interaction: None (Static Display) -> Justification: Breaks down dense information into scannable, visually distinct sections for better readability.
+        - Home Page Overview -> Goal: Inform/Summarize -> Presentation: Structured Text Sections (Learning Objectives, Target Audience, Full Topic List) -> Interaction: None -> Justification: Provides a high-level summary of the entire course, setting context and expectations for the user.
+        - References Page -> Goal: Inform/Attribute -> Presentation: Bulleted List of Sources -> Interaction: None -> Justification: Provides necessary source attribution for the course content.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar-item.active {
+            background-color: #3b82f6; /* bg-blue-600 */
+            color: white;
+        }
+        .list-circle li {
+            list-style-type: circle;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app" class="flex flex-col md:flex-row min-h-screen">
+        
+        <aside class="w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 p-6 flex-shrink-0">
+            <header class="mb-6">
+                <h1 class="text-2xl font-bold text-slate-900">Stakeholder Management</h1>
+                <p class="text-sm text-slate-500 mt-1">Interactive Course Storyboard</p>
+            </header>
+
+            <div class="mb-6">
+                <h2 class="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">Course Overview</h2>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-slate-100 p-3 rounded-lg">
+                        <span id="total-modules" class="text-2xl font-bold text-blue-600"></span>
+                        <span class="text-xs text-slate-500 block">Modules</span>
+                    </div>
+                    <div class="bg-slate-100 p-3 rounded-lg">
+                        <span id="total-duration" class="text-2xl font-bold text-blue-600"></span>
+                        <span class="text-xs text-slate-500 block">Minutes</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav>
+                <h2 class="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">Modules</h2>
+                <ul id="module-nav" class="space-y-1">
+                </ul>
+            </nav>
+        </aside>
+
+        <main id="main-content" class="flex-1 p-6 md:p-8 lg:p-12 overflow-y-auto">
+            <!-- Content will be injected here -->
+        </main>
+    </div>
+
+    <template id="module-template">
+        <div class="animate-fade-in">
+            <header class="mb-8">
+                <h2 class="text-4xl font-bold text-slate-900" data-template="title"></h2>
+                <p class="text-lg text-slate-500 mt-2" data-template="subtitle"></p>
+            </header>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6" data-section="module-details">
+                 <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                    <span class="mr-3 text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                    </span>
+                    Module Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-slate-600">Topics Covered</h4>
+                        <ul class="mt-2 list-disc list-inside text-slate-500 space-y-1" data-template="topics"></ul>
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-slate-600">Duration</h4>
+                        <p class="mt-2 text-slate-500"><span data-template="duration" class="font-bold text-2xl text-green-600"></span> minutes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6" data-section="presentation-interactivity">
+                <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                     <span class="mr-3 text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    </span>
+                    Presentation & Interactivity
+                </h3>
+                <ul class="list-disc list-inside text-slate-700 space-y-2" data-template="description"></ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200" data-section="design-visuals">
+                <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                    <span class="mr-3 text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+                    </span>
+                    Design & Visuals
+                </h3>
+                <div class="prose prose-slate max-w-none" data-template="design"></div>
+            </div>
+            
+            <div id="extra-content-container" class="mt-6"></div>
+
+        </div>
+    </template>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative bg-white rounded-lg p-4 max-w-3xl max-h-[90vh] overflow-auto">
+            <button id="close-modal" class="absolute top-2 right-2 text-slate-700 hover:text-slate-900 text-3xl font-bold leading-none focus:outline-none">
+                &times;
+            </button>
+            <img id="modal-image" src="" alt="" class="w-full h-auto rounded-lg">
+            <p id="modal-caption" class="text-center text-sm text-slate-600 mt-2"></p>
+        </div>
+    </div>
+
+
+    <script>
+        const courseData = [
+            {
+                id: 0,
+                title: "Course Overview",
+                subtitle: "Navigating the Network: Mastering Stakeholder Management",
+                duration: 0, // Not a module with specific duration
+                topics: [], // Topics will be generated dynamically
+                description: [
+                    "This course is designed to equip Team Leaders and Managers with the knowledge and practical skills to effectively identify, analyze, engage, and build productive relationships with stakeholders, ensuring project success and fostering collaborative environments.",
+                    "Target Audience: Team Leaders and Managers."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Professional yet inviting. Shades of deep blue (trust, stability), vibrant green (growth, success), and warm orange/yellow (creativity, engagement) as accents against a clean white/light gray background. Main background is a light slate, with content cards in white.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <img class="clickable-image-content rounded-lg shadow-sm w-full cursor-pointer" src="https://placehold.co/600x400/B3E0FF/0056B3?text=Course+Hero+Image" alt="Course Hero Image Placeholder: A welcoming visual representing project success and collaboration." onerror="this.onerror=null;this.src='https://placehold.co/600x400/B3E0FF/0056B3?text=Image+Load+Error';">
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">Navigation buttons are integrated into the sidebar, with active states highlighted in blue.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Minimal to no specific audio elements for the overview page, focusing on visual information consumption.</p>
+                `,
+                extraContent: function() {
+                    const container = document.getElementById('extra-content-container');
+                    container.innerHTML = `
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                            <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                                <span class="mr-3 text-blue-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18s-3.332.477-4.5 1.253" /></svg>
+                                </span>
+                                Learning Objectives
+                            </h3>
+                            <ul class="list-disc list-inside text-slate-700 space-y-1">
+                                <li>Define “stakeholder”</li>
+                                <li>Define stakeholder management</li>
+                                <li>Identify and analyze your project’s stakeholders</li>
+                                <li>Explain steps on how to manage stakeholder expectations</li>
+                                <li>Identify ways to develop productive relationships with stakeholders</li>
+                                <li>Practice concepts/methods/best practices learned</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                            <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                                <span class="mr-3 text-blue-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                                </span>
+                                Course Topics & Durations
+                            </h3>
+                            <ul class="list-disc list-inside text-slate-700 space-y-2">
+                                ${courseData.filter(m => m.id !== 0 && m.id !== 9).map(m => `
+                                    <li><strong>Module ${m.id}: ${m.title}</strong> (${m.duration} minutes)
+                                        <ul class="list-circle list-inside ml-4 text-sm text-slate-600">
+                                            ${m.topics.map(topic => `<li>${topic}</li>`).join('')}
+                                        </ul>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    container.classList.remove('hidden');
+                    // Hide default module sections for the home page
+                    document.querySelector('[data-section="module-details"]').classList.add('hidden');
+                    document.querySelector('[data-section="presentation-interactivity"]').classList.add('hidden');
+                    document.querySelector('[data-section="design-visuals"]').classList.add('hidden');
+                }
+            },
+            {
+                id: 1,
+                title: "Introduction",
+                subtitle: "Why Stakeholders Matter!",
+                duration: 7,
+                topics: [
+                    "Welcome & Course Overview",
+                    "Recognizing Stakeholder Impact"
+                ],
+                description: [
+                    "Engaging welcome screen and course overview.",
+                    "Short, energetic animation showing a project struggling then stabilizing as forces align (visualizing 'why' stakeholders matter).",
+                    "Interactive question: Learners reflect on key individuals/groups in a past project (text box for reflection).",
+                    "Visual display of course objectives.",
+                    "Highlighting practical benefits for Team Leaders/Managers:",<ul><li>Smoother project execution</li><li>Reduced conflict and resistance</li><li>Improved project outcomes and results</li><li>Enhanced communication skills</li><li>Better career growth opportunities</li></ul>"
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Uses deep blue for headings and accents, with a clean white background for content. Green accents for positive reinforcement or success indicators.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="clickable-image-container bg-blue-100 p-4 rounded-lg flex items-center justify-center text-center text-blue-700 text-sm cursor-pointer">
+                            <img src="https://i.ibb.co/b5NQFFzm/1.png" alt="1" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">Navigation buttons (e.g., "Start Course") are prominent and use a primary blue color.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Voiceover for animated introduction. Subtle background music during welcome screen (optional).</p>
+                `
+            },
+            {
+                id: 2,
+                title: "Who's in Your Orbit?",
+                subtitle: "Defining 'Stakeholder'",
+                duration: 12,
+                topics: [
+                    "Defining 'Stakeholder'",
+                    "Internal vs. External Stakeholders",
+                    "The importance of early identification"
+                ],
+                description: [
+                    "Clear, visual definition of 'stakeholder'.",
+                    "Interactive 'Spot the Stakeholder' drag-and-drop activity with immediate feedback.",
+                    "Explainer graphic to differentiate internal and external stakeholders with examples.",
+                    "Mini-case study illustrating impact of stakeholder identification.",
+                    "Knowledge check: Multiple-choice question on stakeholder definition."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Uses blue for interactive elements and highlights. Green for correct feedback, red for incorrect. Backgrounds are light slate and white.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-center text-center text-blue-700 text-sm">
+                            <img src="https://i.ibb.co/DH4zLgF8/2.png" alt="2" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">Feedback messages appear dynamically near the interactive elements.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Subtle sound effects for correct/incorrect answers in interactive activities.</p>
+                `
+            },
+            {
+                id: 3,
+                title: "The Art of Influence",
+                subtitle: "Understanding Stakeholder Management",
+                duration: 10,
+                topics: [
+                    "Defining 'Stakeholder Management'",
+                    "Benefits of Effective Management",
+                    "Common Challenges & Pitfalls"
+                ],
+                description: [
+                    "Animated explainer video defining stakeholder management (e.g., aligning departments on a new initiative).",
+                    "Interactive 'Benefits Wheel': Clickable segments reveal explanations and examples of benefits.",
+                    "'Challenge Corner': Presents common pitfalls with actionable tips.",
+                    "Interactive activity: Learners match common stakeholder management challenges to effective solutions."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Accents of green for benefits, amber/orange for challenges to visually differentiate content. Blue for interactive elements.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-center text-center text-blue-700 text-sm">
+                            <img src="https://i.ibb.co/j9ThT7tP/3.png" alt="3" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">"Challenge Corner" elements use a warning icon (e.g., ⚠️) for visual emphasis.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Voiceover for the explainer video. Subtle click sounds for "Benefits Wheel" interaction.</p>
+                `
+            },
+            {
+                id: 4,
+                title: "Your Stakeholder Map",
+                subtitle: "Identification & Analysis",
+                duration: 25,
+                topics: [
+                    "Step-by-Step Identification Process",
+                    "Stakeholder Analysis Tools (Power/Interest Grid)",
+                    "Prioritizing Stakeholders"
+                ],
+                description: [
+                    "Interactive checklist: 'How to Find Your Stakeholders' which includes:",
+                    "<ul class='list-disc list-inside ml-4 text-sm text-slate-600'><li>Brainstorm: Who is affected by or can influence the project?", </li><li>Categorize: Group stakeholders (e.g., internal/external, primary/secondary).</li><li>Refine & Review: Ensure all key stakeholders are identified and categorized appropriately.</li></ul>",
+                    "Animated tutorial: Step-by-step demonstration of the Power/Interest Grid and downloadable Power/Interest Grid template.",
+                    "'Grid Challenge' activity: Learners drag and drop stakeholders onto an interactive Power/Interest Grid with immediate feedback.",
+                    "Knowledge check: Scenario-based question applying the Power/Interest Grid."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">The Power/Interest Grid uses distinct background colors for each quadrant (e.g., amber for "Keep Satisfied", green for "Manage Closely", blue for "Keep Informed", light grey for "Monitor").</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-green-100 p-4 rounded-lg flex items-center justify-center text-center text-green-700 text-sm">
+                            <img src="https://i.ibb.co/5WCDJSm3/4.png" alt="4" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">A "Download Template" button is clearly visible.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Voiceover for the animated tutorial. Sound effects for drag-and-drop interactions and feedback.</p>
+                `,
+                extraContent: function() {
+                    const container = document.getElementById('extra-content-container');
+                    container.innerHTML = `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                            <span class="mr-3 text-blue-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" /></svg>
+                            </span>
+                            Example: Power/Interest Grid
+                        </h3>
+                        <div class="relative flex items-center justify-center p-4">
+                            <!-- Y Axis Label -->
+                            <p class="absolute left-[-2rem] top-1/2 -translate-y-1/2 -rotate-90 font-semibold text-slate-500">Power</p>
+                            <!-- X Axis Label -->
+                            <p class="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 font-semibold text-slate-500">Interest</p>
+                            
+                            <!-- Grid structure -->
+                            <div class="grid grid-cols-2 grid-rows-2 gap-1 w-full max-w-lg h-80 bg-slate-300 border border-slate-400">
+                                <div class="bg-amber-100 p-4 flex flex-col justify-center items-center text-center">
+                                    <h4 class="font-bold text-amber-800">Keep Satisfied</h4>
+                                    <p class="text-sm text-amber-700 mt-1">Low Interest / High Power</p>
+                                </div>
+                                <div class="bg-green-100 p-4 flex flex-col justify-center items-center text-center">
+                                    <h4 class="font-bold text-green-800">Manage Closely</h4>
+                                    <p class="text-sm text-green-700 mt-1">High Interest / High Power</p>
+                                </div>
+                                <div class="bg-slate-200 p-4 flex flex-col justify-center items-center text-center">
+                                    <h4 class="font-bold text-slate-800">Monitor</h4>
+                                    <p class="text-sm text-slate-700 mt-1">Low Interest / Low Power</p>
+                                </div>
+                                <div class="bg-blue-100 p-4 flex flex-col justify-center items-center text-center">
+                                    <h4 class="font-bold text-blue-800">Keep Informed</h4>
+                                    <p class="text-sm text-blue-700 mt-1">High Interest / Low Power</p>
+                                </div>
+                            </div>
+
+                            <!-- Arrows -->
+                            <div class="absolute top-0 left-0 w-full h-full pointer-events-none">
+                                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path d="M 50 0 V 100" stroke="black" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                    <path d="M 0 50 H 100" stroke="black" stroke-width="0.5" stroke-dasharray="2,2"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                    container.classList.remove('hidden');
+                    document.querySelector('[data-section="module-details"]').classList.remove('hidden');
+                    document.querySelector('[data-section="presentation-interactivity"]').classList.remove('hidden');
+                    document.querySelector('[data-section="design-visuals"]').classList.remove('hidden');
+                }
+            },
+            {
+                id: 5,
+                title: "The Expectation Game",
+                subtitle: "Managing Stakeholder Expectations",
+                duration: 20,
+                topics: [
+                    "Understanding various types of expectations",
+                    "Communication strategies",
+                    "Handling difficult conversations"
+                ],
+                description: [
+                    "Animated opening scenario illustrating mismanaged expectations.",
+                    "Interactive 'Expectation Spectrum': Learners explore explicit, implicit, realistic, and unrealistic expectations.",
+                    "Key communication principles presented with 'Pro Tips' (Clarity & Honesty, Active Listening, Regular Updates, Setting Boundaries, Documentation).",
+                    "'Choose Your Own Adventure' branching scenario: Learners will first watch a short video clip presenting a challenging stakeholder situation. After the video, they will be prompted to select communication responses, and the scenario will branch to show the consequences of their choice.",
+                    "Video snippet: Expert interview on approaching difficult conversations with stakeholders."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Uses a mix of blue for positive interactions, and subtle red/orange for challenging scenarios or negative feedback to guide the user through the branching scenario.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-amber-100 p-4 rounded-lg flex items-center justify-center text-center text-amber-700 text-sm">
+                            <img src="https://i.ibb.co/SDfZdSnB/5.png" alt="5" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">Dialogue boxes for the "Choose Your Own Adventure" are clean and distinct.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Sound effects for choice selection and scenario progression. Voiceover for expert interview video.</p>
+                `
+            },
+            {
+                id: 6,
+                title: "Building Bridges",
+                subtitle: "Developing Productive Relationships",
+                duration: 20,
+                topics: [
+                    "Strategies for relationship building",
+                    "Building trust and credibility",
+                    "Conflict resolution basics",
+                    "The power of empathy"
+                ],
+                description: [
+                    "Interactive 'Relationship Builder' tool: Learners click strategies (e.g., 'Find Common Ground') for details and examples.",
+                    "'Trust Meter' concept: Visual explanation of how trust is built over time.",
+                    "Text-based role-play simulation: Learners practice dialogue skills in challenging stakeholder interactions.",
+                    "Empathy exercise: Learners consider a stakeholder's perspective by filling in blanks."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Green is used for elements related to growth and positive relationships. Blue for interactive elements. Trust meter uses a gradient from light to deep green/blue.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-green-100 p-4 rounded-lg flex items-center justify-center text-center text-green-700 text-sm">
+                            <mg src="https://i.ibb.co/bjFdWdVN/6.png" alt="6" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">Role-play uses a simple chat bubble interface for dialogue.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Subtle sound effects for interactions within the "Relationship Builder" and role-play dialogue progression.</p>
+                `
+            },
+            {
+                id: 7,
+                title: "Your Stakeholder Success Story",
+                subtitle: "Practice & Application",
+                duration: 20,
+                topics: [
+                    "Comprehensive Case Study Simulation",
+                    "Creating a Personal Action Plan"
+                ],
+                description: [
+                    "Comprehensive, multi-stage case study simulation: Learners identify, map, plan communication, and respond to simulated stakeholder messages.",
+                    "Interactive 'My Stakeholder Action Plan' template: Learners outline real-world stakeholders and strategies, downloadable for personal use.",
+                    "Final knowledge check: Comprehensive quiz covering all learning objectives."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Dashboard-like colors for the simulation, using blue for progress indicators, green for positive outcomes, and amber/red for challenges or warnings. Action plan uses a clean, professional palette.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-blue-100 p-4 rounded-lg flex items-center justify-center text-center text-blue-700 text-sm">
+                            <img src="https://i.ibb.co/VcyqF9pp/7.png" alt="7" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">Progress bars and score indicators are visually prominent. "Download" button for the action plan.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Sound effects for simulation interactions and completion feedback. No continuous background audio.</p>
+                `
+            },
+            {
+                id: 8,
+                title: "Conclusion",
+                subtitle: "Your Stakeholder Journey Continues!",
+                duration: 5,
+                topics: [
+                    "Course Summary & Key Takeaways",
+                    "Additional Resources & Call to Action"
+                ],
+                description: [
+                    "Animated recap of the course journey, highlighting key concepts.",
+                    "Links to recommended articles, books, or external tools for continued learning.",
+                    "Link to a short course feedback survey."
+                ],
+                design: `
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Font</h4>
+                    <p class="text-slate-500">Primary Font: 'Inter', sans-serif.</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Color Palette</h4>
+                    <p class="text-slate-500">Uses a positive, encouraging palette with greens and blues to signify completion and future growth. Accents of amber for "Tips."</p>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Graphic Mock-ups</h4>
+                    <p class="text-sm text-slate-500 mb-2 italic">Click on any image placeholder for an enlarged view.</p>
+                    <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="bg-green-100 p-4 rounded-lg flex items-center justify-center text-center text-green-700 text-sm">
+                            <img src="https://i.ibb.co/5XzK3yNz/8.png" alt="8" border="0">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-slate-500 text-sm">A prominent "Take the Survey" button is included.</div>
+
+                    <h4 class="font-semibold text-slate-600 mt-4 mb-2">Audio</h4>
+                    <p class="text-slate-500">Upbeat background music for the recap animation. Voiceover for concluding remarks.</p>
+                `
+            },
+            {
+                id: 9,
+                title: "References",
+                subtitle: "Sources for this Course Material",
+                duration: 0,
+                topics: [],
+                description: [
+                    "This page lists the primary references used in the development of this Stakeholder Management course material."
+                ],
+                design: ``, // Removed Design & Visuals section as requested
+                extraContent: function() {
+                    const container = document.getElementById('extra-content-container');
+                    container.innerHTML = `
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                            <h3 class="text-xl font-semibold text-slate-800 flex items-center mb-4">
+                                <span class="mr-3 text-blue-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h6a2 2 0 012 2v10a2 2 0 01-2 2h-6a2 2 0 01-2-2v-2m0-4h.01M12 11l3 3m0 0l3-3m-3 3V4" /></svg>
+                                </span>
+                                Course References
+                            </h3>
+                            <ul class="list-disc list-inside text-slate-700 space-y-2">
+                                <li>Project Management Institute. (2021). <em>A Guide to the Project Management Body of Knowledge (PMBOK® Guide)</em> (7th ed.). Project Management Institute.</li>
+                                <li>Mendelow, A. L. (1987). <em>Stakeholder Analysis for Strategic Management</em>. Paper presented at the International Conference on Information Systems.</li>
+                                <li>Freeman, R. E. (1984). <em>Strategic Management: A Stakeholder Approach</em>. Pitman.</li>
+                                <li>Covey, S. R. (1989). <em>The 7 Habits of Highly Effective People</em>. Simon & Schuster. (For principles of communication and relationship building).</li>
+                            </ul>
+                        </div>
+                    `;
+                    container.classList.remove('hidden');
+                    document.querySelector('[data-section="module-details"]').classList.add('hidden');
+                    document.querySelector('[data-section="presentation-interactivity"]').classList.add('hidden');
+                    document.querySelector('[data-section="design-visuals"]').classList.add('hidden');
+                }
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const navContainer = document.getElementById('module-nav');
+            const mainContent = document.getElementById('main-content');
+            const moduleTemplate = document.getElementById('module-template');
+            const imageModal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            const modalCaption = document.getElementById('modal-caption');
+            const closeModalButton = document.getElementById('close-modal');
+            
+            const totalDuration = courseData.filter(m => m.id !== 0 && m.id !== 9).reduce((sum, module) => sum + module.duration, 0);
+            document.getElementById('total-modules').textContent = courseData.filter(m => m.id !== 0 && m.id !== 9).length; // Exclude overview and references
+            document.getElementById('total-duration').textContent = totalDuration;
+
+            function displayModule(moduleId) {
+                const moduleData = courseData.find(m => m.id === moduleId);
+                if (!moduleData) return;
+
+                mainContent.innerHTML = '';
+                const clone = moduleTemplate.content.cloneNode(true);
+
+                clone.querySelector('[data-template="title"]').textContent = moduleData.title;
+                clone.querySelector('[data-template="subtitle"]').textContent = moduleData.subtitle;
+                
+                const moduleDetailsSection = clone.querySelector('[data-section="module-details"]');
+                const presentationInteractivitySection = clone.querySelector('[data-section="presentation-interactivity"]');
+                const designVisualsSection = clone.querySelector('[data-section="design-visuals"]');
+
+                if (moduleId === 0 || moduleId === 9) { // For Home and References pages
+                    moduleDetailsSection.classList.add('hidden');
+                    presentationInteractivitySection.classList.add('hidden');
+                    if (moduleId === 9) { // Hide design visuals section for references
+                        designVisualsSection.classList.add('hidden');
+                    } else { // Keep design visuals for home page
+                        designVisualsSection.classList.remove('hidden'); 
+                    }
+                } else {
+                    moduleDetailsSection.classList.remove('hidden');
+                    presentationInteractivitySection.classList.remove('hidden');
+                    designVisualsSection.classList.remove('hidden');
+
+                    clone.querySelector('[data-template="duration"]').textContent = moduleData.duration;
+                    const topicsList = clone.querySelector('[data-template="topics"]');
+                    topicsList.innerHTML = '';
+                    moduleData.topics.forEach(topic => {
+                        const li = document.createElement('li');
+                        li.textContent = topic;
+                        topicsList.appendChild(li);
+                    });
+                }
+
+                // Update description to be a bulleted list
+                const descriptionList = clone.querySelector('[data-template="description"]');
+                descriptionList.innerHTML = ''; // Clear existing content
+                if (Array.isArray(moduleData.description)) {
+                    moduleData.description.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = item; // Use innerHTML to allow for bold/italic if needed
+                        descriptionList.appendChild(li);
+                    });
+                } else {
+                    // Fallback for single paragraph descriptions, though all should be arrays now
+                    const li = document.createElement('li');
+                    li.innerHTML = moduleData.description;
+                    descriptionList.appendChild(li);
+                }
+
+                clone.querySelector('[data-template="design"]').innerHTML = moduleData.design;
+
+                mainContent.appendChild(clone);
+                
+                const extraContentContainer = document.getElementById('extra-content-container');
+                if (extraContentContainer) extraContentContainer.innerHTML = ''; // Clear previous extra content
+
+                if (moduleData.extraContent && typeof moduleData.extraContent === 'function') {
+                    moduleData.extraContent();
+                }
+
+                // Add event listeners to newly rendered clickable images
+                document.querySelectorAll('.clickable-image-content').forEach(img => {
+                    img.addEventListener('click', (e) => {
+                        modalImage.src = e.target.src;
+                        modalImage.alt = e.target.alt;
+                        modalCaption.textContent = e.target.alt; // Use alt text as caption
+                        imageModal.classList.remove('hidden');
+                    });
+                });
+
+                document.querySelectorAll('#module-nav .sidebar-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`#module-nav .sidebar-item[data-id="${moduleId}"]`).classList.add('active');
+            }
+
+            // Close modal functionality
+            closeModalButton.addEventListener('click', () => {
+                imageModal.classList.add('hidden');
+            });
+
+            imageModal.addEventListener('click', (e) => {
+                if (e.target === imageModal) { // Only close if clicking on the overlay, not the image itself
+                    imageModal.classList.add('hidden');
+                }
+            });
+
+            courseData.forEach(module => {
+                const li = document.createElement('li');
+                let moduleTitle;
+                let moduleDuration = "";
+
+                if (module.id === 0) {
+                    moduleTitle = "Course Overview";
+                } else if (module.id === 9) {
+                    moduleTitle = "References";
+                } else {
+                    moduleTitle = `${module.id}. ${module.title}`;
+                    moduleDuration = `<span class="text-xs text-slate-500">${module.duration} min</span>`;
+                }
+
+                li.innerHTML = `
+                    <a href="#" class="sidebar-item flex items-center justify-between w-full px-4 py-2 text-left text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75 transition-colors duration-150" data-id="${module.id}">
+                        <span>${moduleTitle}</span>
+                        ${moduleDuration}
+                    </a>
+                `;
+                li.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    displayModule(module.id);
+                });
+                navContainer.appendChild(li);
+            });
+            
+            displayModule(0); // Display the new Course Overview page by default
+        });
+    </script>
+</body>
+</html>
